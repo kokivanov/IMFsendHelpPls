@@ -18,6 +18,13 @@ namespace WpfApp2
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    /// 
+
+
+    // 1. Serching algorythm (begins from, ends at)
+    // 2. Writing status to MMF
+    // 3. Reading statuses from MMF to ObservableCollection
+    // 4. Show it as datagrid
     public partial class MainWindow : Window
     {
         public MainWindow()
