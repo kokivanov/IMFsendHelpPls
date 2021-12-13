@@ -7,4 +7,14 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="NyanCat.gif" />
+    <None Remove="PYh.gif" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="NyanCat.gif" />
+    <Resource Include="PYh.gif" />
+  </ItemGroup>
+
 </Project>
