@@ -7,6 +7,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800"
         xmlns:extensions="using:Microsoft.Toolkit.Uwp.UI.Extensions">
+  <Grid x:Name="WN">
     <Grid Background="#FF1D1D1D">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="60*"/>
@@ -33,6 +34,5 @@
         <TextBox TextWrapping="Wrap" Margin="50,164,511,247" TextChanged="TextBox_TextChanged" Grid.ColumnSpan="2"/>
         <Label Content="Progress:" HorizontalAlignment="Left" Height="28" Margin="196,402,0,0" VerticalAlignment="Top" Width="60" Foreground="#FFFBF6F6" Grid.Column="1"/>
         <Label Content="Find in The file:" HorizontalAlignment="Left" Height="23" Margin="21,136,0,0" VerticalAlignment="Top" Width="89" Background="#FF1D1D1D" Foreground="#FFF7EBEB" Grid.ColumnSpan="2"/>
-
     </Grid>
 </Window>
