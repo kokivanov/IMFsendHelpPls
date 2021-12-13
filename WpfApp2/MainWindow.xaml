@@ -7,18 +7,32 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800"
         xmlns:extensions="using:Microsoft.Toolkit.Uwp.UI.Extensions">
-    <Grid>
-        <DataGrid x:Name="Datagrid" HorizontalAlignment="Left" Height="370" Margin="288,19,0,0" VerticalAlignment="Top" Width="491" AutoGenerateColumns="false" ItemsSource="{Binding VMDeamons}">
+    <Grid Background="#FF1D1D1D">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="60*"/>
+            <ColumnDefinition Width="709*"/>
+            <ColumnDefinition Width="31*"/>
+        </Grid.ColumnDefinitions>
+        <DataGrid x:Name="Datagrid" HorizontalAlignment="Left" Height="368" Margin="270,21,0,0" VerticalAlignment="Top" Width="449" AutoGenerateColumns="false" ItemsSource="{Binding VMDeamons}" Grid.ColumnSpan="2" Grid.Column="1" SelectionChanged="Datagrid_SelectionChanged">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Process name" Binding="{Binding ProcessName}"/>
                 <DataGridTextColumn Header="Proces progress" Binding="{Binding Progress, StringFormat='\{0\}%'}"/>
                 <DataGridTextColumn Header="Is active" Binding="{Binding IsRunning}"/>
             </DataGrid.Columns>
         </DataGrid>
-        <ProgressBar HorizontalAlignment="Center" Height="17" Margin="0,407,0,0" VerticalAlignment="Top" Width="758" Value="{Binding OverallStatus}"/>
-        <Button x:Name="StartButton" Content="BEGIN!" HorizontalAlignment="Left" Height="25" Margin="21,47,0,0" VerticalAlignment="Top" Width="249" Click="StartButton_Click"/>
-        <TextBox x:Name="PathTextBox" HorizontalAlignment="Left" Height="20" Margin="21,22,0,0" TextWrapping="Wrap" Text="{Binding FilePathTextBox}" VerticalAlignment="Top" Width="228" IsEnabled="{Binding FilePathTextBoxIsUnlocked}"/>
-        <Button x:Name="ChooseFileButton_Copy" Content="..." HorizontalAlignment="Left" Margin="254,22,0,0" VerticalAlignment="Top" Width="16" Click="ChooseFileButton_Copy_Click"/>
+        <ProgressBar HorizontalAlignment="Left" Height="17" Margin="270,407,0,0" VerticalAlignment="Top" Width="415" Value="{Binding OverallStatus}" ValueChanged="ProgressBar_ValueChanged" Grid.Column="1" IsIndeterminate="True" Cursor="Arrow">
+            <ProgressBar.Foreground>
+                <ImageBrush ImageSource="/PYh.gif" Stretch="Fill" TileMode="None"/>
+            </ProgressBar.Foreground>
+        </ProgressBar>
+        <Button x:Name="StartButton" Content="🔍" HorizontalAlignment="Left" Height="23" Margin="210,164,0,0" VerticalAlignment="Top" Width="32" Click="StartButton_Click" Grid.Column="1"/>
+        <TextBox x:Name="PathTextBox" HorizontalAlignment="Left" Height="20" Margin="30,103,0,0" TextWrapping="Wrap" Text="{Binding FilePathTextBox}" VerticalAlignment="Top" Width="228" IsEnabled="{Binding FilePathTextBoxIsUnlocked}" Grid.ColumnSpan="2"/>
+        <Button x:Name="ChooseFileButton_Copy" Content="..." HorizontalAlignment="Left" Margin="210,103,0,0" VerticalAlignment="Top" Width="32" Click="ChooseFileButton_Copy_Click" Grid.Column="1" Height="25"/>
+        <Image Margin="10,10,1,376" Source="/Image1.png" Stretch="Fill" RenderTransformOrigin="0.127,0.115"/>
+        <Label Content="Choose Your File:" HorizontalAlignment="Left" Height="24" Margin="10,74,0,0" VerticalAlignment="Top" Width="100" Foreground="#FFF7F6F6" Grid.ColumnSpan="2"/>
+        <TextBox TextWrapping="Wrap" Margin="50,164,511,247" TextChanged="TextBox_TextChanged" Grid.ColumnSpan="2"/>
+        <Label Content="Progress:" HorizontalAlignment="Left" Height="28" Margin="196,402,0,0" VerticalAlignment="Top" Width="60" Foreground="#FFFBF6F6" Grid.Column="1"/>
+        <Label Content="Find in The file:" HorizontalAlignment="Left" Height="23" Margin="21,136,0,0" VerticalAlignment="Top" Width="89" Background="#FF1D1D1D" Foreground="#FFF7EBEB" Grid.ColumnSpan="2"/>
 
     </Grid>
 </Window>
