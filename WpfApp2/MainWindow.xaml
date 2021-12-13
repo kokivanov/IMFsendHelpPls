@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800"
         xmlns:extensions="using:Microsoft.Toolkit.Uwp.UI.Extensions">
-    <Grid>
+    <Grid x:Name="WN">
         <DataGrid x:Name="Datagrid" HorizontalAlignment="Left" Height="370" Margin="288,19,0,0" VerticalAlignment="Top" Width="491" AutoGenerateColumns="false" ItemsSource="{Binding VMDeamons}">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Process name" Binding="{Binding ProcessName}"/>
@@ -15,8 +15,8 @@
                 <DataGridTextColumn Header="Is active" Binding="{Binding IsRunning}"/>
             </DataGrid.Columns>
         </DataGrid>
-        <ProgressBar HorizontalAlignment="Center" Height="17" Margin="0,407,0,0" VerticalAlignment="Top" Width="758" Value="{Binding OverallStatus}"/>
-        <Button x:Name="StartButton" Content="BEGIN!" HorizontalAlignment="Left" Height="25" Margin="21,47,0,0" VerticalAlignment="Top" Width="249" Click="StartButton_Click"/>
+        <ProgressBar HorizontalAlignment="Center" Height="17" Margin="0,407,0,0" VerticalAlignment="Top" Width="758" Value="{Binding OverallProgress}" MouseDoubleClick="ProgressBar_MouseDoubleClick"/>
+        <Button x:Name="StartButton" Content="BEGIN!" HorizontalAlignment="Left" Height="25" Margin="21,47,0,0" VerticalAlignment="Top" Width="249" Click="StartButton_Click" IsEnabled="{Binding IsPathValid}"/>
         <TextBox x:Name="PathTextBox" HorizontalAlignment="Left" Height="20" Margin="21,22,0,0" TextWrapping="Wrap" Text="{Binding FilePathTextBox}" VerticalAlignment="Top" Width="228" IsEnabled="{Binding FilePathTextBoxIsUnlocked}"/>
         <Button x:Name="ChooseFileButton_Copy" Content="..." HorizontalAlignment="Left" Margin="254,22,0,0" VerticalAlignment="Top" Width="16" Click="ChooseFileButton_Copy_Click"/>
 
