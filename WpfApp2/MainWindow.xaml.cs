@@ -35,9 +35,9 @@ namespace WpfApp2
         {
             this._processName = pn;
 
-            _gate = MemoryMappedFile.CreateNew(pn + "mmf", 8);
+            _gate = MemoryMappedFile.CreateNew(pn + "mmf", sizeof(Int64));
             _accessor = _gate.CreateViewAccessor();
-
+            _mutex = new Mutex(true, pn + "mutex");
         }
 
         ~VMDeamonProcess() {
@@ -64,8 +64,10 @@ namespace WpfApp2
 
         public void Update() 
         {
-            byte[] bytes = new byte[8];
+            byte[] bytes = new byte[sizeof(Int64)];
+            _mutex.WaitOne();
             _accessor.ReadArray(0, bytes, 0, bytes.Length);
+            _mutex.ReleaseMutex();
             Int64 text = BitConverter.ToInt64(bytes, 0);
             this.Progress = text;
         }
@@ -113,6 +115,12 @@ namespace WpfApp2
     public class VMMain : INotifyPropertyChanged {
         public ObservableCollection<VMDeamonProcess> VMDeamons { get; set; }
 
+        private int _overallStatus = 0;
+        public int OverallStatus { 
+            get { return _overallStatus; }
+            set { _overallStatus = value; OnPropertyChanged("OverallStatus"); }
+        }
+
         public VMMain() 
         {
             FilePathTextBox = "File path here...";
@@ -144,6 +152,8 @@ namespace WpfApp2
 
     public partial class MainWindow : Window
     {
+        private MemoryMappedFile _filePathMMF;
+        private MemoryMappedViewAccessor _filePathMMFaccessor;
 
         public VMMain MainVM { get; set; }
 
@@ -152,35 +162,21 @@ namespace WpfApp2
             MainVM = new VMMain();
 
             MainVM.VMDeamons = new ObservableCollection<VMDeamonProcess>();
-            
-            for (int i = 0; i < 10; i++ )
-                MainVM.VMDeamons.Add(new VMDeamonProcess($"Process {i}"));
 
             DataContext = MainVM;
 
             InitializeComponent();
 
-            using (MemoryMappedFile mmf = MemoryMappedFile.OpenExisting("Process 0mmf"))
-            {
-                bool mutexCreated;
-                Mutex mutex = new Mutex(true, "testmapmutex", out mutexCreated);
-                using (MemoryMappedViewStream stream = mmf.CreateViewStream())
-                {
-                    BinaryWriter writer = new BinaryWriter(stream);
-                    writer.Write((Int64)59);
-                }
-                mutex.ReleaseMutex();
+        }
 
-            }
-
+        ~MainWindow() {
+            _filePathMMF.Dispose();
+            _filePathMMFaccessor.Dispose(); 
         }
 
         private void StartButton_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var deamon in MainVM.VMDeamons) 
-            { 
-                deamon.Update();
-            }
+            
         }
 
         private void ChooseFileButton_Copy_Click(object sender, RoutedEventArgs e)
@@ -196,7 +192,11 @@ namespace WpfApp2
             {
                 MainVM.FilePathTextBox = openFileDialog.FileName;
             }
-                       
+
+        }
+
+        private void StartSearch() {
+            
         }
     }
 }

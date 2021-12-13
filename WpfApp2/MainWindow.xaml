@@ -15,7 +15,7 @@
                 <DataGridTextColumn Header="Is active" Binding="{Binding IsRunning}"/>
             </DataGrid.Columns>
         </DataGrid>
-        <ProgressBar HorizontalAlignment="Center" Height="17" Margin="0,407,0,0" VerticalAlignment="Top" Width="758"/>
+        <ProgressBar HorizontalAlignment="Center" Height="17" Margin="0,407,0,0" VerticalAlignment="Top" Width="758" Value="{Binding OverallStatus}"/>
         <Button x:Name="StartButton" Content="BEGIN!" HorizontalAlignment="Left" Height="25" Margin="21,47,0,0" VerticalAlignment="Top" Width="249" Click="StartButton_Click"/>
         <TextBox x:Name="PathTextBox" HorizontalAlignment="Left" Height="20" Margin="21,22,0,0" TextWrapping="Wrap" Text="{Binding FilePathTextBox}" VerticalAlignment="Top" Width="228" IsEnabled="{Binding FilePathTextBoxIsUnlocked}"/>
         <Button x:Name="ChooseFileButton_Copy" Content="..." HorizontalAlignment="Left" Margin="254,22,0,0" VerticalAlignment="Top" Width="16" Click="ChooseFileButton_Copy_Click"/>
