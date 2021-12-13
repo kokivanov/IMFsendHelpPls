@@ -1,5 +1,6 @@
 ﻿using System.IO.MemoryMappedFiles;
 using System.Linq;
+using System.Text;
 
 namespace deamon {
     class deamonapp {
@@ -11,7 +12,7 @@ namespace deamon {
         static Int64 beginLine;
         static Int64 endLine;
 
-        static List<Tuple<int, int>> indexes;
+        static List<Tuple<Int64, int>> indexes;
 
         static int progress = 0;
         static Int64 found = 0;
@@ -83,25 +84,42 @@ namespace deamon {
             mutex.ReleaseMutex();
         }
 
-        public static void Seek(string[] src, string t) {
-            for(int i = 0; i < src.Length; i++) 
+        public static void Seek(string[] src, string t, Int64 s, Int64 e) {
+            t = t.ToLower();
+
+            var end = e < src.Length ? e+1 : e == src.Length ? e : src.Length;
+
+            for(Int64 i = s; i < end; i++) 
             {
-                var lj = 0;
-                while ((lj = src[i].IndexOf(t, lj + 1)) != -1)
-                    indexes.Append(new Tuple<int, int>(i, lj));
+                if (src[i].Length < 1)
+                    continue;
+                var lj = -1;
+                while ((lj = src[i].ToLower().IndexOf(t, lj + 1)) != -1)
+                    indexes.Add(new Tuple<Int64, int>(i, lj));
+
+                progress = (int)(Math.Floor((double)(((double)i - (double)s) / ((double)e - (double)s) * 100)));
+                if (i == end - 1)
+                    progress = 100;
+                found = indexes.Count();
+
+                Console.WriteLine($"{i - s} / {e - s} = {progress}%");
+
+                WriteStatusAndProgress();
+                //Console.WriteLine($"{t} - {src[i].ToLower()} - {src[i].ToLower().IndexOf(t)}");
             }
         }
 
         public static void Main(String[] args)
         {
-            proccessID = int.Parse(args[0]);
+            //Console.OutputEncoding = Encoding.UTF8;
+            //proccessID = int.Parse(args[0]);
             mutex = new Mutex(false, proccessID + "Mutex");
 
-            beginLine = Int32.Parse(args[1]);
-            endLine = Int32.Parse(args[2]);
-            //proccessID = 0;
-            //beginLine = 0;
-            //endLine = 19;
+            //beginLine = Int32.Parse(args[1]);
+            //endLine = Int32.Parse(args[2]);
+            proccessID = 0;
+            beginLine = 0;
+            endLine = 6000;
             Console.WriteLine($"{proccessID}, {beginLine}, {endLine}");
 
             foundGate = MemoryMappedFile.OpenExisting(proccessID + "FoundMMF");
@@ -114,8 +132,13 @@ namespace deamon {
             searchedWord = System.Text.Encoding.Default.GetString(ReadMMFAllBytes("SearchedWordMMF"));
             Console.WriteLine($"{filePath}");
 
+            indexes = new List<Tuple<Int64, int>>();
             var line = File.ReadLines(filePath).Skip((int)beginLine).Take((int)(endLine - beginLine)).ToArray();
-            
+            Seek(line, searchedWord, beginLine, endLine);
+            foreach (var i in indexes) 
+            {
+                Console.WriteLine($"{i.Item1}, {i.Item2}\n");
+            }
         }
 
     }

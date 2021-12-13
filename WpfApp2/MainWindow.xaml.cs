@@ -36,7 +36,7 @@ namespace WpfApp2
         private Mutex _mutex;
 
         public VMDeamonProcess(int pn) 
-        {
+        {   
             this._processName = pn;
 
             _foundGate = MemoryMappedFile.CreateNew(pn + "FoundMMF", sizeof(Int64));
@@ -46,7 +46,7 @@ namespace WpfApp2
             _mutex = new Mutex(true, pn + "Mutex");
             _mutex.ReleaseMutex();
 
-
+            GC.KeepAlive(_mutex);
         }
 
         ~VMDeamonProcess() {
@@ -106,6 +106,7 @@ namespace WpfApp2
                 OnPropertyChanged("Found");
             }
         }
+
 
 
         private bool _isRunning = true;
@@ -169,9 +170,18 @@ namespace WpfApp2
 
         public VMMain() 
         {
+            
             FilePathTextBox = "";
             FilePathTextBoxIsUnlocked = false;
         }
+
+        private string _searchedWord;
+        public string SearchedWord 
+        {
+            get { return _searchedWord; }
+            set { _searchedWord = value; OnPropertyChanged("SearchedWord"); }
+        }
+
 
         private string _filePathTextBox;
         public string FilePathTextBox
@@ -194,6 +204,7 @@ namespace WpfApp2
             if (PropertyChanged != null)
                 PropertyChanged(this, new PropertyChangedEventArgs(prop));
         }
+
     }
 
     public partial class MainWindow : Window
@@ -288,7 +299,7 @@ namespace WpfApp2
         }
 
         private void StartSearch() { // Called when Start button pressed
-            if (!MainVM.IsPathValid) {
+            if (!MainVM.IsPathValid || MainVM.SearchedWord == "") {
                 return;
             }
 
@@ -306,14 +317,14 @@ namespace WpfApp2
             GC.KeepAlive(_serchedwordMMFaccessor);
 
             _filePathMMFaccessor.WriteArray<char>(0, MainVM.FilePathTextBox.ToCharArray(), 0, MainVM.FilePathTextBox.Count());
-            _serchedwordMMFaccessor.WriteArray<char>(0, MainVM.FilePathTextBox.ToCharArray(), 0, MainVM.FilePathTextBox.Count());
+            _serchedwordMMFaccessor.WriteArray<char>(0, MainVM.SearchedWord.ToCharArray(), 0, MainVM.SearchedWord.Count());
 
 
             // !TODO Divide selected file by lines fill in collection
             MainVM.VMDeamons.Add(new VMDeamonProcess(0));
         }
 
-        private void ProgressBar_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void ProgressBarKek_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             foreach (var i in MainVM.VMDeamons)
                 i.Update();
