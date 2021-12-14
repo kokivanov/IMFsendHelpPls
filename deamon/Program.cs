@@ -23,6 +23,11 @@ namespace deamon {
         static MemoryMappedFile progressGate;
         static MemoryMappedViewAccessor progressAccessor;
 
+        static MemoryMappedFile spentTimeGate;
+        static MemoryMappedViewAccessor spentTimeAccessor;
+
+        static Int64 startTime;
+
         static Mutex mutex;
         public static byte[] ReadMMFAllBytes(string fileName) // Method to read string from mmf that was borrowed from internet so idc what's happening
         {
@@ -55,8 +60,6 @@ namespace deamon {
             }
         }
 
-
-
         public static void WriteStatusAndProgress() { // Writes progress and amount of words found to mmf
             mutex.WaitOne();
             //Console.WriteLine($"Setting {progress} {found}");
@@ -81,7 +84,22 @@ namespace deamon {
                 termination = true;
             }
 
+            if (spentTimeAccessor.CanWrite)
+            {
+                var b = BitConverter.GetBytes(_getCurrentTime() - startTime);
+                progressAccessor.WriteArray<byte>(0, b, 0, b.Length);
+            }
+            else
+            {
+                termination = true;
+            }
+
             mutex.ReleaseMutex();
+        }
+
+        private static Int64 _getCurrentTime() 
+        {
+            return DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
         }
 
         public static void Seek(string[] src, string t) { // Searching word method
@@ -121,7 +139,9 @@ namespace deamon {
             foundAccessor = foundGate.CreateViewAccessor();
             progressGate = MemoryMappedFile.OpenExisting(proccessID + "ProgressMMF");
             progressAccessor = progressGate.CreateViewAccessor();
-                
+            spentTimeGate = MemoryMappedFile.OpenExisting(proccessID + "SepntTimeMMF");
+            spentTimeAccessor = spentTimeGate.CreateViewAccessor();
+
             filePath += System.Text.Encoding.Default.GetString(ReadMMFAllBytes("FilePathMMF"));
             searchedWord = System.Text.Encoding.Default.GetString(ReadMMFAllBytes("SearchedWordMMF"));
 
@@ -130,6 +150,7 @@ namespace deamon {
             var line = File.ReadLines(filePath).Skip((Int32)beginLine).Take((Int32)(endLine - beginLine)).ToArray();
 
             Console.WriteLine("Starting seek() method");
+            startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             Seek(line, searchedWord);
 
 

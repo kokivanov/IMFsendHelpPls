@@ -41,6 +41,9 @@ namespace WpfApp2
         private MemoryMappedFile _progressGate; // Percent of data that have been computed
         private MemoryMappedViewAccessor _progressAccessor;
 
+        private MemoryMappedFile _spentTimeGate; // Percent of data that have been computed
+        private MemoryMappedViewAccessor _spentTimeAccessor;
+
         private Mutex _mutex;
 
         public VMDeamonProcess(int pn, Int64 sp, Int64 ep)
@@ -51,6 +54,8 @@ namespace WpfApp2
             _foundAccessor = _foundGate.CreateViewAccessor();
             _progressGate = MemoryMappedFile.CreateNew(pn + "ProgressMMF", sizeof(int));
             _progressAccessor = _progressGate.CreateViewAccessor();
+            _spentTimeGate = MemoryMappedFile.CreateNew(pn + "SepntTimeMMF", sizeof(int));
+            _spentTimeAccessor = _spentTimeGate.CreateViewAccessor();
             _mutex = new Mutex(true, pn + "Mutex");
             _mutex.ReleaseMutex();
 
@@ -111,17 +116,32 @@ namespace WpfApp2
         {
             byte[] bytes1 = new byte[sizeof(int)];
             byte[] bytes2 = new byte[sizeof(Int64)];
+            byte[] bytes3 = new byte[sizeof(Int64)];
             _mutex.WaitOne();
             _progressAccessor.ReadArray(0, bytes1, 0, bytes1.Length);
             _foundAccessor.ReadArray(0, bytes2, 0, bytes2.Length);
+            _foundAccessor.ReadArray(0, bytes3, 0, bytes3.Length);
             _mutex.ReleaseMutex();
             int text1 = BitConverter.ToInt32(bytes1, 0);
             Int64 text2 = BitConverter.ToInt64(bytes2, 0);
+            Int64 text3 = BitConverter.ToInt64(bytes3, 0);
             this.Progress = text1;
             this.Found = text2;
+            this.SpentTime = text3;
             
             IsRunning = !deamon.HasExited;
             return this;
+        }
+
+        private Int64 _spentTime;
+        public Int64 SpentTime 
+        { 
+            get => _spentTime;
+            set
+            {
+                _spentTime = value;
+                OnPropertyChanged("SpentTime");
+            }
         }
 
         private int _processName;
@@ -165,13 +185,16 @@ namespace WpfApp2
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     /// 
-
+    
 
     // !TODO: Bind search button availability to IsPathValid parameter
     // !TODO: Remove debbuging label
 
     public class VMMain : INotifyPropertyChanged {
         public ObservableCollection<VMDeamonProcess> VMDeamons { get; set; }
+
+        public ObservableCollection<double> TimeSpend { get; set; }
+
 
         private bool _isPathValid = false; //!TODO Link to Start button enabled
         public bool IsPathValid { 
@@ -243,7 +266,7 @@ namespace WpfApp2
 
     public partial class MainWindow : Window
     {
-        const int AMOUNT_OF_ROUTINES = 1; // Bind to textbox like selecting file
+        const int AMOUNT_OF_ROUTINES = 15; // Bind to textbox like selecting file
 
         private MemoryMappedFile _filePathMMF;
         private MemoryMappedViewAccessor _filePathMMFaccessor;
@@ -251,9 +274,16 @@ namespace WpfApp2
         private MemoryMappedFile _serchedwordMMF;
         private MemoryMappedViewAccessor _serchedwordMMFaccessor;
 
-        private Thread UpdateThread;
-
         public VMMain MainVM { get; set; }
+
+        private async Task UpdateThread()
+        {
+            while (!isDone()) 
+            { 
+                
+                await Task.Delay(500);
+            }
+        }
 
         public MainWindow()
         {
@@ -263,10 +293,7 @@ namespace WpfApp2
 
             DataContext = MainVM;
 
-            UpdateThread = new Thread(() => {
-                while (!isDone())
-                    Thread.Sleep(500);
-            });
+            
 
             InitializeComponent();
 
@@ -334,7 +361,7 @@ namespace WpfApp2
             
         }
 
-        private void StartSearch() { // Called when Start button pressed
+        private async void StartSearch() { // Called when Start button pressed
             if (!MainVM.IsPathValid || String.IsNullOrWhiteSpace(MainVM.SearchedWord)) // Validates file path
             { 
                 MessageBox.Show("Пустое поле не может быть элементом поиска", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -371,10 +398,9 @@ namespace WpfApp2
             if (step == fc)
             {
                 MainVM.VMDeamons.Add(new VMDeamonProcess(0, 0, fc));
-                UpdateThread.Start();
+                await UpdateThread();
                 return;
             }
-
 
             Int64 sp = 0;
             int Index = 0;
@@ -384,7 +410,7 @@ namespace WpfApp2
                 Index++;
             }
 
-            UpdateThread.Start();
+            await UpdateThread();
         }
 
         public void Terminate() 

@@ -22,6 +22,7 @@
                 <DataGridTextColumn Header="Found" Binding="{Binding Found}"/>
                 <DataGridTextColumn Header="Start point" Binding="{Binding StartPoint, StringFormat=\{0\}}"/>
                 <DataGridTextColumn Header="End point" Binding="{Binding EndPoint, StringFormat=\{0\}}"/>
+                <DataGridTextColumn Header="Spent time" Binding="{Binding SpentTime, StringFormat=\{0\}ms}"/>
             </DataGrid.Columns>
         </DataGrid>
         <ProgressBar secondaryNamespace:Name="ProgressBarKek" HorizontalAlignment="Left" Height="22" Margin="270,402,0,0" VerticalAlignment="Top" Width="449" Grid.Column="1" Cursor="Arrow" MouseDoubleClick="ProgressBarKek_MouseDoubleClick" Value="{Binding OverallProgress}" Foreground="#FF29A036" Orientation="Horizontal" SmallChange="1" Background="{secondaryNamespace:Null}" Grid.ColumnSpan="2"/>
