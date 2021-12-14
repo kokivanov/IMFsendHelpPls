@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfApp2", "WpfApp2\WpfApp2.csproj", "{185344EB-50E7-4B96-ABA6-FD75AE0198CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfApp2", "WpfApp2\WpfApp2.csproj", "{185344EB-50E7-4B96-ABA6-FD75AE0198CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "deamon", "deamon\deamon.csproj", "{E0AC29E1-509B-400D-A09C-C7A8D8444954}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "deamon", "deamon\deamon.csproj", "{E0AC29E1-509B-400D-A09C-C7A8D8444954}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

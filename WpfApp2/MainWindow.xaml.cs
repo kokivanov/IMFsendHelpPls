@@ -19,13 +19,21 @@ using System.Collections.ObjectModel;
 using System.Threading;
 using System.IO.MemoryMappedFiles;
 using System.IO;
+using System.Diagnostics;
 using Microsoft.Win32;
+
 
 namespace WpfApp2
 {
 
+
     public class VMDeamonProcess : INotifyPropertyChanged
     {
+
+        const string PROC_FILE = @"C:\Users\koki\source\repos\kokivanov\IMFsendHelpPls\deamon\bin\Debug\net6.0\deamon.exe";
+
+
+        private Process deamon;
 
         private MemoryMappedFile _foundGate; // MMF for amount of words found
         private MemoryMappedViewAccessor _foundAccessor; // 
@@ -35,9 +43,9 @@ namespace WpfApp2
 
         private Mutex _mutex;
 
-        public VMDeamonProcess(int pn) 
+        public VMDeamonProcess(int pn, Int64 sp, Int64 ep)
         {   
-            this._processName = pn;
+            _processName = pn;
 
             _foundGate = MemoryMappedFile.CreateNew(pn + "FoundMMF", sizeof(Int64));
             _foundAccessor = _foundGate.CreateViewAccessor();
@@ -47,6 +55,15 @@ namespace WpfApp2
             _mutex.ReleaseMutex();
 
             GC.KeepAlive(_mutex);
+
+            deamon = new Process();
+
+            StartPoint = sp;
+            EndPoint = ep;
+
+            deamon.StartInfo.FileName = PROC_FILE;
+            deamon.StartInfo.Arguments = $"{pn} {sp} {ep}";
+            deamon.Start();
         }
 
         ~VMDeamonProcess() {
@@ -54,9 +71,26 @@ namespace WpfApp2
             _foundGate.Dispose();
             _mutex.ReleaseMutex();
             _mutex?.Dispose();
+            deamon?.Kill();
+            deamon?.Dispose();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
+
+        private Int64 _startPoint;
+        public Int64 StartPoint 
+        {
+            get { return _startPoint; }
+            set { _startPoint = value; OnPropertyChanged("StartPoint"); }
+        }
+
+        private Int64 _endPoint;
+        public Int64 EndPoint
+        {
+            get { return _endPoint; }
+            set { _endPoint = value; OnPropertyChanged("StartPoint"); }
+        }
+
 
         private int _progress;
         public int Progress
@@ -85,8 +119,8 @@ namespace WpfApp2
             Int64 text2 = BitConverter.ToInt64(bytes2, 0);
             this.Progress = text1;
             this.Found = text2;
-            if (Progress == 100 || Progress == -1)
-                IsRunning = false;
+            
+            IsRunning = !deamon.HasExited;
             return this;
         }
 
@@ -106,8 +140,6 @@ namespace WpfApp2
                 OnPropertyChanged("Found");
             }
         }
-
-
 
         private bool _isRunning = true;
         public bool IsRunning
@@ -156,7 +188,7 @@ namespace WpfApp2
             foreach (var i in VMDeamons)
             {
                 i.Update();
-                _overallProgress += i.Progress / VMDeamons.Count;
+                _overallProgress += i.Progress / VMDeamons.Count();
             }
             OverallProgress = _overallProgress;
         }
@@ -182,6 +214,12 @@ namespace WpfApp2
             set { _searchedWord = value; OnPropertyChanged("SearchedWord"); }
         }
 
+        private string _dbginfo;
+        public string DBGInfo 
+        {
+            get { return _dbginfo; }
+            set { _dbginfo = value; OnPropertyChanged("DBGInfo"); }
+        }
 
         private string _filePathTextBox;
         public string FilePathTextBox
@@ -209,15 +247,17 @@ namespace WpfApp2
 
     public partial class MainWindow : Window
     {
+        const int AMOUNT_OF_ROUTINES = 1;
+
         private MemoryMappedFile _filePathMMF;
         private MemoryMappedViewAccessor _filePathMMFaccessor;
 
         private MemoryMappedFile _serchedwordMMF;
         private MemoryMappedViewAccessor _serchedwordMMFaccessor;
 
-        public VMMain MainVM { get; set; }
+        private Thread UpdateThread;
 
-        
+        public VMMain MainVM { get; set; }
 
         public MainWindow()
         {
@@ -226,6 +266,11 @@ namespace WpfApp2
             MainVM.VMDeamons = new ObservableCollection<VMDeamonProcess>();
 
             DataContext = MainVM;
+
+            UpdateThread = new Thread(() => {
+                while (!isDone())
+                    Thread.Sleep(500);
+            });
 
             InitializeComponent();
 
@@ -243,21 +288,16 @@ namespace WpfApp2
             StartSearch();
         }
 
-        private async Task<bool> isDone() {
-            return MainVM.VMDeamons.All(x => x.Update().Progress == 100);
-        }
-
-        private async void whenAllDone()  // Asynchronous wait till all deamons finish work
-        {
-            while (!(isDone()).Result) { 
-                Thread.Sleep(250);
+        private bool isDone() {
+            bool d = true;
+            MainVM.OverallProgress = 0;
+            foreach (var i in MainVM.VMDeamons) 
+            {
+                i.Update();
+                MainVM.OverallProgress +=  i.Progress / MainVM.VMDeamons.Count();
+                d &= !i.IsRunning;
             }
-            allDone();
-        }
-
-        private async void allDone() // !TODO: Notify user how many repetitions were found
-        { 
-            
+            return d;
         }
 
         private void ChooseFileButton_Copy_Click(object sender, RoutedEventArgs e)
@@ -299,29 +339,62 @@ namespace WpfApp2
         }
 
         private void StartSearch() { // Called when Start button pressed
-            if (!MainVM.IsPathValid || MainVM.SearchedWord == "") {
+            if (!MainVM.IsPathValid || String.IsNullOrWhiteSpace(MainVM.SearchedWord))
+            { 
+                MessageBox.Show("Пустое поле не может быть элементом поиска", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             var buff1 = Encoding.Default.GetBytes(MainVM.FilePathTextBox);
-            _filePathMMF = MemoryMappedFile.CreateNew("FilePathMMF", buff1.Length);
+            _filePathMMF = MemoryMappedFile.CreateOrOpen("FilePathMMF", buff1.Length);
             _filePathMMFaccessor = _filePathMMF.CreateViewAccessor();
 
-            var buff2 = Encoding.Default.GetBytes(MainVM.FilePathTextBox); // !TODO: Change to searched word
-            _serchedwordMMF = MemoryMappedFile.CreateNew("SearchedWordMMF", buff2.Length);
+            var buff2 = Encoding.Default.GetBytes(MainVM.SearchedWord); // !TODO: Change to searched word
+            _serchedwordMMF = MemoryMappedFile.CreateOrOpen("SearchedWordMMF", buff2.Length);
             _serchedwordMMFaccessor = _serchedwordMMF.CreateViewAccessor();
 
             GC.KeepAlive(_filePathMMF);
+
             GC.KeepAlive(_filePathMMFaccessor);
             GC.KeepAlive(_serchedwordMMF);
             GC.KeepAlive(_serchedwordMMFaccessor);
 
-            _filePathMMFaccessor.WriteArray<char>(0, MainVM.FilePathTextBox.ToCharArray(), 0, MainVM.FilePathTextBox.Count());
-            _serchedwordMMFaccessor.WriteArray<char>(0, MainVM.SearchedWord.ToCharArray(), 0, MainVM.SearchedWord.Count());
+            byte[] bytes1 = Encoding.Default.GetBytes(MainVM.FilePathTextBox);
+            _filePathMMFaccessor.WriteArray(0, bytes1, 0, bytes1.Count());
+            byte[] bytes2 = Encoding.Default.GetBytes(MainVM.SearchedWord);
+            _serchedwordMMFaccessor.WriteArray(0, bytes2, 0, bytes2.Count());
+
+            var fc = File.ReadLines(MainVM.FilePathTextBox).Count();
+
+            Int64 step = (Int64)Math.Floor((double)(fc / AMOUNT_OF_ROUTINES));
+            MainVM.DBGInfo = $"{MainVM.SearchedWord}, {fc}, {AMOUNT_OF_ROUTINES}, {step}";
+
+            if (step == fc)
+            {
+                MainVM.VMDeamons.Add(new VMDeamonProcess(0, 0, fc));
+                UpdateThread.Start();
+                return;
+            }
 
 
-            // !TODO Divide selected file by lines fill in collection
-            MainVM.VMDeamons.Add(new VMDeamonProcess(0));
+            Int64 sp = 0;
+            int Index = 0;
+            for (; sp + step < fc;)
+            {
+                MainVM.VMDeamons.Add(new VMDeamonProcess(Index, sp, sp += step));
+                Index++;
+            }
+
+            UpdateThread.Start();
+        }
+
+        public void Terminate() 
+        {
+            MainVM.VMDeamons.Clear();
+            GC.ReRegisterForFinalize(_filePathMMF);
+            GC.ReRegisterForFinalize(_filePathMMFaccessor);
+            GC.ReRegisterForFinalize(_serchedwordMMF);
+            GC.ReRegisterForFinalize(_serchedwordMMFaccessor);
         }
 
         private void ProgressBarKek_MouseDoubleClick(object sender, MouseButtonEventArgs e)
