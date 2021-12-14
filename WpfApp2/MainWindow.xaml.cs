@@ -30,7 +30,7 @@ namespace WpfApp2
     public class VMDeamonProcess : INotifyPropertyChanged
     {
 
-        const string PROC_FILE = @"C:\Users\koki\source\repos\kokivanov\IMFsendHelpPls\deamon\bin\Debug\net6.0\deamon.exe";
+        const string PROC_FILE = @"C:\Users\koki\source\repos\kokivanov\IMFsendHelpPls\deamon\bin\Debug\net6.0\deamon.exe"; // Bind to textbox like selecting file
 
 
         private Process deamon;
@@ -167,12 +167,8 @@ namespace WpfApp2
     /// 
 
 
-    // 1. Serching algorythm (begins from, ends at)
-    // 2. Writing status to MMF
-    // 3. Reading statuses from MMF to ObservableCollection
-    // 4. Show it as datagrid
-
-    
+    // !TODO: Bind search button availability to IsPathValid parameter
+    // !TODO: Remove debbuging label
 
     public class VMMain : INotifyPropertyChanged {
         public ObservableCollection<VMDeamonProcess> VMDeamons { get; set; }
@@ -183,7 +179,7 @@ namespace WpfApp2
             set { _isPathValid = value; OnPropertyChanged("IsPathValid"); }
         }
 
-        public void UpdateOverall() {
+        public void UpdateOverall() { // Updates overall progress
             _overallProgress = 0;
             foreach (var i in VMDeamons)
             {
@@ -247,7 +243,7 @@ namespace WpfApp2
 
     public partial class MainWindow : Window
     {
-        const int AMOUNT_OF_ROUTINES = 1;
+        const int AMOUNT_OF_ROUTINES = 1; // Bind to textbox like selecting file
 
         private MemoryMappedFile _filePathMMF;
         private MemoryMappedViewAccessor _filePathMMFaccessor;
@@ -288,7 +284,7 @@ namespace WpfApp2
             StartSearch();
         }
 
-        private bool isDone() {
+        private bool isDone() { // Checks is all proccesses finished work
             bool d = true;
             MainVM.OverallProgress = 0;
             foreach (var i in MainVM.VMDeamons) 
@@ -300,7 +296,7 @@ namespace WpfApp2
             return d;
         }
 
-        private void ChooseFileButton_Copy_Click(object sender, RoutedEventArgs e)
+        public void ChooseFileButton_Copy_Click(object sender, RoutedEventArgs e)
         {
             MainVM.FilePathTextBoxIsUnlocked = true;
             OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -339,7 +335,7 @@ namespace WpfApp2
         }
 
         private void StartSearch() { // Called when Start button pressed
-            if (!MainVM.IsPathValid || String.IsNullOrWhiteSpace(MainVM.SearchedWord))
+            if (!MainVM.IsPathValid || String.IsNullOrWhiteSpace(MainVM.SearchedWord)) // Validates file path
             { 
                 MessageBox.Show("Пустое поле не может быть элементом поиска", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
@@ -349,25 +345,28 @@ namespace WpfApp2
             _filePathMMF = MemoryMappedFile.CreateOrOpen("FilePathMMF", buff1.Length);
             _filePathMMFaccessor = _filePathMMF.CreateViewAccessor();
 
-            var buff2 = Encoding.Default.GetBytes(MainVM.SearchedWord); // !TODO: Change to searched word
+            var buff2 = Encoding.Default.GetBytes(MainVM.SearchedWord); 
             _serchedwordMMF = MemoryMappedFile.CreateOrOpen("SearchedWordMMF", buff2.Length);
             _serchedwordMMFaccessor = _serchedwordMMF.CreateViewAccessor();
 
+            // GC Zone
             GC.KeepAlive(_filePathMMF);
-
             GC.KeepAlive(_filePathMMFaccessor);
             GC.KeepAlive(_serchedwordMMF);
             GC.KeepAlive(_serchedwordMMFaccessor);
 
+            // Writes target file path and target word to mmf
             byte[] bytes1 = Encoding.Default.GetBytes(MainVM.FilePathTextBox);
             _filePathMMFaccessor.WriteArray(0, bytes1, 0, bytes1.Count());
             byte[] bytes2 = Encoding.Default.GetBytes(MainVM.SearchedWord);
             _serchedwordMMFaccessor.WriteArray(0, bytes2, 0, bytes2.Count());
 
-            var fc = File.ReadLines(MainVM.FilePathTextBox).Count();
+            var fc = File.ReadLines(MainVM.FilePathTextBox).Count(); // Get length of target file
 
             Int64 step = (Int64)Math.Floor((double)(fc / AMOUNT_OF_ROUTINES));
             MainVM.DBGInfo = $"{MainVM.SearchedWord}, {fc}, {AMOUNT_OF_ROUTINES}, {step}";
+
+            // Creates deamons
 
             if (step == fc)
             {

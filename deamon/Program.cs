@@ -24,7 +24,7 @@ namespace deamon {
         static MemoryMappedViewAccessor progressAccessor;
 
         static Mutex mutex;
-        public static byte[] ReadMMFAllBytes(string fileName)
+        public static byte[] ReadMMFAllBytes(string fileName) // Method to read string from mmf that was borrowed from internet so idc what's happening
         {
             using (var mmf = MemoryMappedFile.OpenExisting(fileName))
             {
@@ -57,7 +57,7 @@ namespace deamon {
 
 
 
-        public static void WriteStatusAndProgress() { 
+        public static void WriteStatusAndProgress() { // Writes progress and amount of words found to mmf
             mutex.WaitOne();
             //Console.WriteLine($"Setting {progress} {found}");
 
@@ -84,7 +84,7 @@ namespace deamon {
             mutex.ReleaseMutex();
         }
 
-        public static void Seek(string[] src, string t) {
+        public static void Seek(string[] src, string t) { // Searching word method
             t = t.ToLower();
                         
             for(Int64 i = 0; i < src.Length; i++) 
@@ -116,12 +116,12 @@ namespace deamon {
 
             Console.WriteLine($"{proccessID}, {beginLine}, {endLine}");
 
+            // mmfs for status and amount of words found
             foundGate = MemoryMappedFile.OpenExisting(proccessID + "FoundMMF");
             foundAccessor = foundGate.CreateViewAccessor();
             progressGate = MemoryMappedFile.OpenExisting(proccessID + "ProgressMMF");
             progressAccessor = progressGate.CreateViewAccessor();
                 
-
             filePath += System.Text.Encoding.Default.GetString(ReadMMFAllBytes("FilePathMMF"));
             searchedWord = System.Text.Encoding.Default.GetString(ReadMMFAllBytes("SearchedWordMMF"));
 
