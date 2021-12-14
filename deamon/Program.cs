@@ -87,7 +87,7 @@ namespace deamon {
             if (spentTimeAccessor.CanWrite)
             {
                 var b = BitConverter.GetBytes(_getCurrentTime() - startTime);
-                progressAccessor.WriteArray<byte>(0, b, 0, b.Length);
+                spentTimeAccessor.WriteArray<byte>(0, b, 0, b.Length);
             }
             else
             {
@@ -114,7 +114,9 @@ namespace deamon {
                     indexes.Add(new Tuple<Int64, int>(i, lj));
 
                 progress = (int)(Math.Floor(((double)i +1)/ (double)src.Length * 100.0));
-                    
+
+                //Console.WriteLine(progress);
+
                 found = indexes.Count();
 
                 WriteStatusAndProgress();
@@ -153,11 +155,10 @@ namespace deamon {
             startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             Seek(line, searchedWord);
 
-
-            foreach (var i in indexes) 
-            {
-                Console.WriteLine($"{i.Item1}, {i.Item2}\n");
-            }
+            //foreach (var i in indexes) 
+            //{
+            //    Console.WriteLine($"{i.Item1}, {i.Item2}\n");
+            //}
         }
 
     }

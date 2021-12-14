@@ -118,7 +118,7 @@ namespace WpfApp2
             byte[] bytes2 = new byte[sizeof(Int64)];
             byte[] bytes3 = new byte[sizeof(Int64)];
             _mutex.WaitOne();
-            _progressAccessor.ReadArray(0, bytes1, 0, bytes1.Length);
+            _progressAccessor.ReadArray(0, bytes1, 0, bytes1.Count());
             _foundAccessor.ReadArray(0, bytes2, 0, bytes2.Length);
             _foundAccessor.ReadArray(0, bytes3, 0, bytes3.Length);
             _mutex.ReleaseMutex();
@@ -266,7 +266,7 @@ namespace WpfApp2
 
     public partial class MainWindow : Window
     {
-        const int AMOUNT_OF_ROUTINES = 15; // Bind to textbox like selecting file
+        const int AMOUNT_OF_ROUTINES = 4; // Bind to textbox like selecting file
 
         private MemoryMappedFile _filePathMMF;
         private MemoryMappedViewAccessor _filePathMMFaccessor;
