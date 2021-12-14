@@ -13,6 +13,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Highsoft.Highcharts" Version="9.2.2.2" />
+    <PackageReference Include="OxyPlot.Core" Version="2.1.0" />
+    <PackageReference Include="SciChart" Version="6.5.0.13720" />
+    <PackageReference Include="ScottPlot.WPF" Version="4.1.27" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="NyanCat.gif" />
     <Resource Include="PYh.gif" />
   </ItemGroup>

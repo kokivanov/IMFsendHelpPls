@@ -21,6 +21,7 @@ using System.IO.MemoryMappedFiles;
 using System.IO;
 using System.Diagnostics;
 using Microsoft.Win32;
+using OxyPlot;
 
 
 namespace WpfApp2
@@ -112,7 +113,7 @@ namespace WpfApp2
             }
         }
 
-        public VMDeamonProcess Update() 
+        public VMDeamonProcess Update()
         {
             byte[] bytes1 = new byte[sizeof(int)];
             byte[] bytes2 = new byte[sizeof(Int64)];
@@ -190,11 +191,14 @@ namespace WpfApp2
     // !TODO: Bind search button availability to IsPathValid parameter
     // !TODO: Remove debbuging label
 
+
     public class VMMain : INotifyPropertyChanged {
         public ObservableCollection<VMDeamonProcess> VMDeamons { get; set; }
 
-        public ObservableCollection<double> TimeSpend { get; set; }
-
+        public ObservableCollection<long> TimeSpend { get; set; } // Time spend with each deamon to find word
+        public ObservableCollection<Tuple<long, int>> FoundForPeriod { get; set; } // Difference between words found in each time section
+        
+        public Dictionary<long, int> DiffFound { get; set; }
 
         private bool _isPathValid = false; //!TODO Link to Start button enabled
         public bool IsPathValid { 
@@ -204,10 +208,10 @@ namespace WpfApp2
 
         public void UpdateOverall() { // Updates overall progress
             _overallProgress = 0;
-            foreach (var i in VMDeamons)
+            for (int i = 0; i <= VMDeamons.Count(); i++)
             {
-                i.Update();
-                _overallProgress += i.Progress / VMDeamons.Count();
+                VMDeamons[i].Update();
+                _overallProgress += VMDeamons[i].Progress / VMDeamons.Count();
             }
             OverallProgress = _overallProgress;
         }
@@ -280,20 +284,33 @@ namespace WpfApp2
         {
             while (!isDone()) 
             { 
-                
                 await Task.Delay(500);
             }
+
+            WhenDone();
+        }
+
+        ObservableCollection<DataPoint> values;
+
+        private void WhenDone()
+        {
+            var v = (from c in MainVM.DiffFound
+                    orderby c.Key
+                    select new DataPoint(c.Key, c.Value));
+            foreach (var i in v)
+                values.Add(i);
         }
 
         public MainWindow()
         {
             MainVM = new VMMain();
-
+            values = new ObservableCollection<DataPoint>();
             MainVM.VMDeamons = new ObservableCollection<VMDeamonProcess>();
+            MainVM.TimeSpend = new ObservableCollection<long>();
+            MainVM.FoundForPeriod = new ObservableCollection<Tuple<long, int>>();
+            MainVM.DiffFound = new Dictionary<long, int>();
 
             DataContext = MainVM;
-
-            
 
             InitializeComponent();
 
@@ -314,11 +331,15 @@ namespace WpfApp2
         private bool isDone() { // Checks is all proccesses finished work
             bool d = true;
             MainVM.OverallProgress = 0;
-            foreach (var i in MainVM.VMDeamons) 
+            for (int i = 0; i < MainVM.VMDeamons.Count(); i++) 
             {
-                i.Update();
-                MainVM.OverallProgress +=  i.Progress / MainVM.VMDeamons.Count();
-                d &= !i.IsRunning;
+                var oldProgress = MainVM.VMDeamons[i].Progress;
+                MainVM.VMDeamons[i].Update();
+                MainVM.TimeSpend[i] = MainVM.VMDeamons[i].SpentTime;
+                MainVM.FoundForPeriod.Add(new Tuple<long, int>(MainVM.VMDeamons[i].SpentTime, MainVM.VMDeamons[i].Progress - oldProgress));
+                MainVM.DiffFound[MainVM.VMDeamons[i].SpentTime] = MainVM.VMDeamons[i].Progress - oldProgress;
+                MainVM.OverallProgress += MainVM.VMDeamons[i].Progress / MainVM.VMDeamons.Count();
+                d &= !MainVM.VMDeamons[i].IsRunning;
             }
             return d;
         }
@@ -406,6 +427,7 @@ namespace WpfApp2
             int Index = 0;
             for (; sp + step < fc;)
             {
+                MainVM.TimeSpend.Add(0);
                 MainVM.VMDeamons.Add(new VMDeamonProcess(Index, sp, sp += step));
                 Index++;
             }
@@ -424,8 +446,14 @@ namespace WpfApp2
 
         private void ProgressBarKek_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            foreach (var i in MainVM.VMDeamons)
-                i.Update();
+            foreach (var i in values)
+            {
+                Trace.WriteLine($"{i.X} - {i.Y}");
+            }
         }
-    }
+
+        private Line xAxisLine, yAxisLine;
+        private double xAxisStart = 0, yAxisStart = 0, interval = 25;
+        private Polyline chartPolyline;
+   
 }
